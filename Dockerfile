@@ -39,3 +39,30 @@ ENV N8N_CUSTOM_EXTENSIONS="/custom/node_modules"
 
 # برگشت به پوشه اصلی n8n
 WORKDIR /usr/local/lib/node_modules/n8n
+
+FROM alpine:latest AS alpine
+
+FROM n8nio/n8n:latest
+
+COPY --from=alpine /sbin/apk /sbin/apk
+COPY --from=alpine /usr/lib/libapk.so* /usr/lib/
+
+USER root
+RUN apk add --no-cache ffmpeg
+
+# 🌟 پوشه نودهای سفارشی را بسازید
+RUN mkdir -p /home/node/.n8n/custom && chown -R node:node /home/node/.n8n
+
+USER node
+
+# 🌟 نود را در پوشه موقت نصب کنید
+WORKDIR /tmp
+RUN npm init -y && npm install n8n-nodes-bale-messenger-alpha
+
+# 🌟 فایل‌های build شده را به پوشه custom کپی کنید
+RUN cp -r /tmp/node_modules/n8n-nodes-bale-messenger-alpha /home/node/.n8n/custom/
+
+# 🌟 مسیر را به n8n معرفی کنید
+ENV N8N_CUSTOM_EXTENSIONS="/home/node/.n8n/custom/n8n-nodes-bale-messenger-alpha"
+
+WORKDIR /usr/local/lib/node_modules/n8n
